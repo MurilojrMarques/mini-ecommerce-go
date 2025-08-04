@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"net/http"
 
-	"github.com/MurilojrMarques/mini-ecommerce-go/cmd/service/user"
+	"github.com/MurilojrMarques/mini-ecommerce-go/service/user"
 	"github.com/gorilla/mux"
 )
 
