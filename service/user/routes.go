@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/MurilojrMarques/mini-ecommerce-go/config"
 	"github.com/MurilojrMarques/mini-ecommerce-go/service/auth"
 	"github.com/MurilojrMarques/mini-ecommerce-go/types"
 	"github.com/MurilojrMarques/mini-ecommerce-go/utils"
@@ -25,7 +26,31 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 }
 
 func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
+	var payload types.LoginUserPayload
+	if err := utils.ParseJSON(r, &payload); err != nil {
+		utils.WriterError(w, http.StatusBadRequest, err)
+		return
+	}
 
+	u, err := h.store.GetUserByEmail(payload.Email)
+	if err != nil {
+		utils.WriterError(w, http.StatusUnauthorized, fmt.Errorf("Email ou senha inválidos"))
+		return
+	}
+
+	if !auth.ComparePasswords(u.Password, []byte(payload.Password)) {
+		utils.WriterError(w, http.StatusUnauthorized, fmt.Errorf("Email ou senha inválidos"))
+		return
+	}
+
+	secret := []byte(config.Envs.JWTSecret)
+	token, err := auth.CreateJWT(secret, u.ID)
+	if err != nil {
+		utils.WriterError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, map[string]string{"token": token})
 }
 
 func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
